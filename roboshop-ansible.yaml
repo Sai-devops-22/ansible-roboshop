@@ -1,4 +1,5 @@
 - name: mongo
+  become: yes
   hosts: mongodb
   tasks:
   - name: copying db
