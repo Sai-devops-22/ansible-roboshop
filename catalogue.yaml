@@ -1,4 +1,4 @@
-- name: catalogue
+- name: catalog
   host: catalogue
   tasks:
   - name: disabling nodejs
