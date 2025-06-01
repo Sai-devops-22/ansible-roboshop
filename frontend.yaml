@@ -42,9 +42,9 @@
 
   - name: remove file
     ansible.builtin.file:
-      src: /etc/nginx/nginx.conf
+      path: /etc/nginx/nginx.conf
       state: absent
-    
+
   - name: copying the file from nginx.conf
     ansible.builtin.copy:
       src: nginx.conf
