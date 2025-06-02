@@ -1,5 +1,6 @@
 - name: rabbitmq
   hosts: rabbitmq
+  become: yes
   tasks: 
   - name: copying the file
     ansible.builtin.copy:
