@@ -1,0 +1,83 @@
+- name: shipping
+  hosts: shipping
+  tasks:
+    - name: installing maven      #we need install mysql software also so, both maven and mysql
+      ansible.builtin.dnf:         #are installed simultaneoulsy.
+        name: "{{items}}"
+        state: present
+      loop:
+      - maven
+      - mysql
+
+    - name: install PyMySQL and cryptography   #these modules should install to run the mysql software in ansible
+      ansible.builtin.pip:                      #beacuse asible is developed by python
+        name: "{{ item }}"
+        executable: pip3.9
+      loop:
+      - cryptography
+      - PyMySQL
+    
+    - name: adding user
+      ansible.builtin.user:
+        name: roboshop
+        system: yes
+        home: /app
+        shell: /sbin/nologin
+
+    - name: get files
+      ansible.builtin.get_url:
+        url: https://roboshop-artifacts.s3.amazonaws.com/shipping-v3.zip 
+        dest: /tmp/shipping.zip
+
+    - name: unzipping
+      ansible.builtin.unarchive:
+        src: /tmp/shipping.zip
+        dest: /app 
+        remote_src: yes
+
+    - name: installing dependencies
+      ansible.builtin.command: mvn clean package 
+      args:
+        chdir: /app
+
+    - name: rename jar file
+      ansible.builtin.command: mv target/shipping-1.0.jar shipping.jar
+      args:
+        chdir: /app
+
+    - name: copying the file
+      ansible:builtin.copy: 
+        src: shipping.service
+        dest: /etc/systemd/system/shipping.service
+
+    - name: daemon reloading
+      ansible.builtin.systemd_service:
+        daemon_reload: yes
+
+    - name: enable ans start
+      ansible.builtin.service:
+        name: shipping
+        state: started
+        enabled: yes
+
+    - name: import data
+      tags:
+      - import                              #this is for importing the mysql data
+      community.mysql.mysql_db:                   
+        name: all
+        login_user: root
+        login_password: RoboShop@1
+        login_host: mysql.daws84s.site
+        state: import
+        target: "{{ item }}"
+      loop:
+      - /app/db/schema.sql
+      - /app/db/app-user.sql
+      - /app/db/master-data.sql
+
+    - name: restart shipping
+      tags:
+      - import
+      ansible.builtin.service:
+        state: restarted
+        name: shipping
