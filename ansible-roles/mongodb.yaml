@@ -1,5 +1,0 @@
-- name: configure mongodb
-  hosts: mongodb
-  become: yes
-  roles:
-  - mongodb
